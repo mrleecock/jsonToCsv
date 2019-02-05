@@ -1,0 +1,149 @@
+import sys
+import json
+import copy
+
+'''
+Lee Cock
+santeri1994kokkonen@gmail.com
+5.2.2019
+'''
+
+class DataSaver:
+    dick = dict()
+
+    def __init__(self):
+        self.dick = dict()
+
+    def saveValues(self, key, value):
+        if key in self.dick:
+            self.dick[key].append(value)
+        else:
+            self.dick[key] = []
+            self.dick[key].append(value)
+
+    def saveToFile(self, fname):
+        try:
+            with open(fname, 'w') as f:
+                keys = list(self.dick.keys())
+
+                for key in keys:
+                    f.write("{}\t".format(key))
+                f.write("\n")
+
+                for i in range(len(self.dick[keys[0]])):
+                    for key in keys:
+                        f.write("{}\t".format(self.dick[key][i]))
+                    f.write("\n")
+
+            print("Tiedosto '{}' tallennettu onnistuneesi!".format(fname))
+        
+        except Exception:
+            print("Tiedoston '{}' kirjoittamisessa ongelma!".format(fname))
+
+
+
+
+
+
+def parseArray(array, object1):
+    
+    for one in array:
+        
+        if (isinstance(one, list)):
+            ass = copy.deepcopy(one)
+            parseArray(ass, object1)
+
+        elif (isinstance(one, dict)):
+            parseDict(one, object1)
+
+        else:
+            print("error in function parseArray...\nlist: {}".format(array))
+            sys.exit()
+
+def parseDict(dict1, object1):
+
+    for key, value in dict1.items():
+
+        if (isinstance(value, list)):
+            parseArray(value, object1)
+
+        elif (isinstance(value, dict)):
+            parseDict(value, object1)
+
+        else:
+            object1.saveValues(key, value) 
+
+
+def main():
+    files = []
+    fnames = []
+
+
+    if (len(sys.argv)-1):
+        print("\nAnnoit {} tiedostoa parametrina\n".format(len(sys.argv)-1))
+        
+        for i in range(1, len(sys.argv)):
+            files.append(sys.argv[i])
+
+    else:
+        print("Anna tiedostonimi parametrina!\nLopetetaan...")
+        sys.exit()
+
+    for i in range(len(files)):
+        fname = input("Anna tiedostoon '{}' liittyvän tallennettavan tiedoston nimi: ".format(files[i]))
+
+        if (fname):
+            fnames.append(fname)
+
+        else:
+            print("Annetaan oletus nimi 'taulukko_{}'".format(files[i]))
+            fnames.append("taulukko_{}".format(files[i]))
+
+    for file_ in files:
+        print("")
+        
+        data = []
+        datasaver = DataSaver()
+
+
+
+        
+
+        try:
+            with open(file_) as f:
+                data = json.load(f)
+
+        except PermissionError:
+            print("!!!\nPermission error, when trying to read file '{}'\n!!!\n".format(file_))
+            if (file_ == files[-1]):
+                print("Tiedostoja ei enää jäljellä... Lopetetaan...\n")
+                sys.exit()
+            else:
+                print("Siirrytään seuraavaan tiedostoon...\n")
+                continue
+
+        except FileNotFoundError:
+            print("!!!\nFile not found error\ncan't find file '{}'.\n!!!\n".format(file_))
+            if (file_ == files[-1]):
+                print("Tiedostoja ei enää jäljellä... Lopetetaan...\n")
+                sys.exit()
+            else:
+                print("Siirrytään seuraavaan tiedostoon...\n")
+                continue
+        
+        except Exception:
+            print("\n!!!\nTuntematon virhe luettaessa tiedostoa '{}'\n!!!\n".format(file_))
+            print("Lopetetaan...")
+            sys.exit()
+
+
+
+        if isinstance(data, list):
+            parseArray(data, datasaver)
+
+        datasaver.saveToFile(fnames[files.index(file_)])
+
+
+
+
+main()
